@@ -18,6 +18,11 @@ RUN apt-get install -y openssh-server && mkdir /var/run/sshd && echo 'root:root'
 #Utilities
 RUN apt-get install -y vim less ntp net-tools inetutils-ping curl git unzip
 
+#MySQL
+RUN apt-get install -y mysql-server && \
+    sed -i 's/127.0.0.1/0.0.0.0/g' /etc/mysql/my.cnf
+
+
 #Install Oracle Java 7
 RUN apt-get install -y python-software-properties && \
     add-apt-repository ppa:webupd8team/java -y && \
@@ -29,5 +34,19 @@ RUN apt-get install -y python-software-properties && \
 RUN wget http://dist.sonar.codehaus.org/sonar-3.7.2.zip && \
     unzip sonar-*.zip && \
     rm sonar-*.zip
+
+#Configure
+ADD supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+#Init MySql
+ADD ./mysql.ddl mysql.ddl
+RUN mysqld & sleep 3 && \
+    mysql < mysql.ddl && \
+    mysqladmin shutdown
+RUN sed -i \
+        -e "s#^sonar.jdbc.url.*#sonar.jdbc.url: jdbc:mysql://localhost:3306/sonar?useUnicode=true\&characterEncoding=utf8\&rewriteBatchedStatements=true#" \
+        /sonar-3.7.2/conf/sonar.properties
+
+EXPOSE 22 9000
 
 
