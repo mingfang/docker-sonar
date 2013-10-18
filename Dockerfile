@@ -47,6 +47,8 @@ RUN sed -i \
         -e "s#^sonar.jdbc.url.*#sonar.jdbc.url: jdbc:mysql://localhost:3306/sonar?useUnicode=true\&characterEncoding=utf8\&rewriteBatchedStatements=true#" \
         /sonar-3.7.2/conf/sonar.properties
 
-EXPOSE 22 9000
+#Call this script manually once if mounting external MySql data dir
+ADD preparedb.sh /preparedb.sh
 
+EXPOSE 22 9000 3306
 
