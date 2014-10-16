@@ -1,54 +1,55 @@
-FROM ubuntu
-
-RUN	echo 'deb http://archive.ubuntu.com/ubuntu precise main universe' > /etc/apt/sources.list
-RUN	echo 'deb http://archive.ubuntu.com/ubuntu precise-updates universe' >> /etc/apt/sources.list
-RUN apt-get update
+FROM ubuntu:14.04
+ 
 ENV DEBIAN_FRONTEND noninteractive
+RUN apt-get update
 
-#Prevent daemon start during install
-RUN	echo '#!/bin/sh\nexit 101' > /usr/sbin/policy-rc.d && chmod +x /usr/sbin/policy-rc.d
-
-#Supervisord
-RUN apt-get install -y supervisor && mkdir -p /var/log/supervisor
-CMD ["/usr/bin/supervisord", "-n"]
+#Runit
+RUN apt-get install -y runit 
+CMD /usr/sbin/runsvdir-start
 
 #SSHD
-RUN apt-get install -y openssh-server && mkdir /var/run/sshd && echo 'root:root' |chpasswd
+RUN apt-get install -y openssh-server && \
+    mkdir -p /var/run/sshd && \
+    echo 'root:root' |chpasswd
+RUN sed -i "s/session.*required.*pam_loginuid.so/#session    required     pam_loginuid.so/" /etc/pam.d/sshd
+RUN sed -i "s/PermitRootLogin without-password/#PermitRootLogin without-password/" /etc/ssh/sshd_config
 
 #Utilities
-RUN apt-get install -y vim less ntp net-tools inetutils-ping curl git unzip
+RUN apt-get install -y vim less net-tools inetutils-ping curl git telnet nmap socat dnsutils netcat tree htop unzip sudo software-properties-common
+
+#Install Oracle Java 8
+RUN add-apt-repository ppa:webupd8team/java -y && \
+    apt-get update && \
+    echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections && \
+    apt-get install -y oracle-java8-installer
+ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
 
 #MySQL
 RUN apt-get install -y mysql-server && \
     sed -i 's/127.0.0.1/0.0.0.0/g' /etc/mysql/my.cnf
 
-
-#Install Oracle Java 7
-RUN apt-get install -y python-software-properties && \
-    add-apt-repository ppa:webupd8team/java -y && \
-    apt-get update && \
-    echo oracle-java7-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections && \
-    apt-get install -y oracle-java7-installer
-
 #Sonar
-RUN wget http://dist.sonar.codehaus.org/sonar-3.7.2.zip && \
-    unzip sonar-*.zip && \
-    rm sonar-*.zip
-
-#Configure
-ADD supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+RUN wget http://dist.sonar.codehaus.org/sonarqube-4.5.zip && \
+    unzip sonar*.zip && \
+    rm sonar*.zip && \
+    mv sonar* sonar
 
 #Init MySql
 ADD ./mysql.ddl mysql.ddl
-RUN mysqld & sleep 3 && \
+RUN mysqld_safe & mysqladmin --wait=5 ping && \
     mysql < mysql.ddl && \
     mysqladmin shutdown
-RUN sed -i \
-        -e "s#^sonar.jdbc.url.*#sonar.jdbc.url: jdbc:mysql://localhost:3306/sonar?useUnicode=true\&characterEncoding=utf8\&rewriteBatchedStatements=true#" \
-        /sonar-3.7.2/conf/sonar.properties
+RUN sed -i -e "s|#sonar.jdbc.url=jdbc:mysql|sonar.jdbc.url=jdbc:mysql|" /sonar/conf/sonar.properties
 
 #Call this script manually once if mounting external MySql data dir
 ADD preparedb.sh /preparedb.sh
 
-EXPOSE 22 9000 3306
+#Sonar Runner
+RUN wget http://repo1.maven.org/maven2/org/codehaus/sonar/runner/sonar-runner-dist/2.4/sonar-runner-dist-2.4.zip && \
+    unzip sonar-runner*zip && \
+    rm sonar-runner*zip && \
+    mv sonar-runner* sonar-runner
+
+#Add runit services
+ADD sv /etc/service 
 

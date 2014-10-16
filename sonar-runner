@@ -1,0 +1,1 @@
+docker run -v `pwd`/sonar-runner.properties:/sonar-runner/conf/sonar-runner.properties -i -t sonar /sonar-runner/bin/sonar-runner $@
