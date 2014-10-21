@@ -1,6 +1,5 @@
 chown -R mysql:mysql /var/lib/mysql
 mysql_install_db
-mysqld_safe&
-sleep 3
-mysql < mysql.ddl
+mysqld_safe & mysqladmin --wait=5 ping
+mysql < /mysql.ddl
 mysqladmin shutdown

@@ -34,22 +34,19 @@ RUN wget http://dist.sonar.codehaus.org/sonarqube-4.5.zip && \
     rm sonar*.zip && \
     mv sonar* sonar
 
-#Init MySql
-ADD ./mysql.ddl mysql.ddl
-RUN mysqld_safe & mysqladmin --wait=5 ping && \
-    mysql < mysql.ddl && \
-    mysqladmin shutdown
-RUN sed -i -e "s|#sonar.jdbc.url=jdbc:mysql|sonar.jdbc.url=jdbc:mysql|" /sonar/conf/sonar.properties
-
-#Call this script manually once if mounting external MySql data dir
-ADD preparedb.sh /preparedb.sh
-
 #Sonar Runner
 RUN wget http://repo1.maven.org/maven2/org/codehaus/sonar/runner/sonar-runner-dist/2.4/sonar-runner-dist-2.4.zip && \
     unzip sonar-runner*zip && \
     rm sonar-runner*zip && \
     mv sonar-runner* sonar-runner
 
+#Init MySql
+ADD mysql.ddl /
+ADD preparedb.sh /
+RUN mysqld_safe & mysqladmin --wait=5 ping && \
+    mysql < mysql.ddl && \
+    mysqladmin shutdown
+RUN sed -i -e "s|#sonar.jdbc.url=jdbc:mysql|sonar.jdbc.url=jdbc:mysql|" /sonar/conf/sonar.properties
+
 #Add runit services
 ADD sv /etc/service 
-

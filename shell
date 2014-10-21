@@ -1,1 +1,1 @@
-docker run -v `pwd`/sonar-runner.properties:/sonar-runner/conf/sonar-runner.properties -v `pwd`:/docker -p 9000:9000 -p 3306:3306 -i -t sonar /bin/bash
+docker run -v `pwd`/extensions:/sonar/extensions -v `pwd`/mysql:/var/lib/mysql -v `pwd`/sonar-runner.properties:/sonar-runner/conf/sonar-runner.properties -v `pwd`:/docker -p 9000:9000 -p 3306:3306 -i -t sonar /bin/bash
