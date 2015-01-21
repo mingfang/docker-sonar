@@ -22,7 +22,7 @@ RUN apt-get install -y mysql-server && \
     sed -i 's/127.0.0.1/0.0.0.0/g' /etc/mysql/my.cnf
 
 #Sonar
-RUN wget http://dist.sonar.codehaus.org/sonarqube-4.5.2.zip && \
+RUN wget http://dist.sonar.codehaus.org/sonarqube-5.0.zip && \
     unzip sonar*.zip && \
     rm sonar*.zip && \
     mv sonar* sonar
