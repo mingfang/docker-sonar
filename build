@@ -1,1 +1,1 @@
-docker build -t sonar .
+docker build $@ -t sonar .
