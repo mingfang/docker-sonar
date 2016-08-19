@@ -39,6 +39,8 @@ RUN mysqld_safe & mysqladmin --wait=5 ping && \
     mysql < mysql.ddl && \
     mysqladmin shutdown
 RUN sed -i -e "s|#sonar.jdbc.url=jdbc:mysql|sonar.jdbc.url=jdbc:mysql|" /sonar/conf/sonar.properties
+RUN sed -i -e "s|#sonar.jdbc.username=|sonar.jdbc.username=sonar|" /sonar/conf/sonar.properties
+RUN sed -i -e "s|#sonar.jdbc.password=|sonar.jdbc.password=sonar|" /sonar/conf/sonar.properties
 
 #Add runit services
 ADD sv /etc/service 
