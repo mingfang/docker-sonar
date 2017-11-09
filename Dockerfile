@@ -1,19 +1,20 @@
-FROM ubuntu:16.04
+FROM ubuntu:16.04 as base
 
-ENV DEBIAN_FRONTEND=noninteractive \
-    LANG=en_US.UTF-8 \
-    TERM=xterm
-RUN locale-gen en_US en_US.UTF-8
-RUN echo "export PS1='\e[1;31m\]\u@\h:\w\\$\[\e[0m\] '" >> /root/.bashrc
+ENV DEBIAN_FRONTEND=noninteractive TERM=xterm
+RUN echo "export > /etc/envvars" >> /root/.bashrc && \
+    echo "export PS1='\[\e[1;31m\]\u@\h:\w\\$\[\e[0m\] '" | tee -a /root/.bashrc /etc/skel/.bashrc && \
+    echo "alias tcurrent='tail /var/log/*/current -f'" | tee -a /root/.bashrc /etc/skel/.bashrc
+
 RUN apt-get update
+RUN apt-get install -y locales && locale-gen en_US.UTF-8 && dpkg-reconfigure locales
+ENV LANGUAGE=en_US.UTF-8 LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
 
 # Runit
 RUN apt-get install -y --no-install-recommends runit
-CMD export > /etc/envvars && /usr/sbin/runsvdir-start
-RUN echo 'export > /etc/envvars' >> /root/.bashrc
+CMD bash -c 'export > /etc/envvars && /usr/sbin/runsvdir-start'
 
 # Utilities
-RUN apt-get install -y --no-install-recommends vim less net-tools inetutils-ping wget curl git telnet nmap socat dnsutils netcat tree htop unzip sudo software-properties-common jq psmisc iproute
+RUN apt-get install -y --no-install-recommends vim less net-tools inetutils-ping wget curl git telnet nmap socat dnsutils netcat tree htop unzip sudo software-properties-common jq psmisc iproute python ssh rsync gettext-base
 
 #Install Oracle Java 8
 RUN add-apt-repository ppa:webupd8team/java -y && \
@@ -22,23 +23,13 @@ RUN add-apt-repository ppa:webupd8team/java -y && \
     apt-get install -y --no-install-recommends oracle-java8-installer
 ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
 
-#MySQL
-RUN apt-get install -y mysql-server && \
-    sed -i 's/127.0.0.1/0.0.0.0/g' /etc/mysql/my.cnf
-
 #Sonar
-RUN wget https://sonarsource.bintray.com/Distribution/sonarqube/sonarqube-6.0.zip && \
+RUN wget https://sonarsource.bintray.com/Distribution/sonarqube/sonarqube-6.7.zip && \
     unzip sonar*.zip && \
     rm sonar*.zip && \
     mv sonar* sonar
 
-#Init MySql
-ADD mysql.ddl /
-ADD preparedb.sh /
-RUN mysqld_safe & mysqladmin --wait=5 ping && \
-    mysql < mysql.ddl && \
-    mysqladmin shutdown
-RUN sed -i -e "s|#sonar.jdbc.url=jdbc:mysql|sonar.jdbc.url=jdbc:mysql|" /sonar/conf/sonar.properties
+RUN sed -i -e "s|#sonar.jdbc.url=jdbc:mysql://localhost:3306/sonar?|sonar.jdbc.url=jdbc:mysql://sonar-db:3306/sonar?useServerPrepStmts=true\&maxAllowedPacket=20000000\&|" /sonar/conf/sonar.properties
 RUN sed -i -e "s|#sonar.jdbc.username=|sonar.jdbc.username=sonar|" /sonar/conf/sonar.properties
 RUN sed -i -e "s|#sonar.jdbc.password=|sonar.jdbc.password=sonar|" /sonar/conf/sonar.properties
 
