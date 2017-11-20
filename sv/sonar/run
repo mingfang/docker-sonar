@@ -1,6 +1,4 @@
 #!/bin/sh
 
-sv start mysql || exit 1
-
 exec 2>&1
 exec /sonar/bin/linux-x86-64/sonar.sh console
