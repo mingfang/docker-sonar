@@ -24,7 +24,7 @@ RUN add-apt-repository ppa:webupd8team/java -y && \
 ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
 
 #Sonar
-RUN wget https://sonarsource.bintray.com/Distribution/sonarqube/sonarqube-6.7.zip && \
+RUN wget https://sonarsource.bintray.com/Distribution/sonarqube/sonarqube-7.1.zip && \
     unzip sonar*.zip && \
     rm sonar*.zip && \
     mv sonar* sonar
@@ -32,6 +32,9 @@ RUN wget https://sonarsource.bintray.com/Distribution/sonarqube/sonarqube-6.7.zi
 RUN sed -i -e "s|#sonar.jdbc.url=jdbc:mysql://localhost:3306/sonar?|sonar.jdbc.url=jdbc:mysql://sonar-db:3306/sonar?useServerPrepStmts=true\&maxAllowedPacket=20000000\&|" /sonar/conf/sonar.properties
 RUN sed -i -e "s|#sonar.jdbc.username=|sonar.jdbc.username=sonar|" /sonar/conf/sonar.properties
 RUN sed -i -e "s|#sonar.jdbc.password=|sonar.jdbc.password=sonar|" /sonar/conf/sonar.properties
+
+RUN useradd sonar
+RUN chown -R sonar /sonar
 
 #Add runit services
 ADD sv /etc/service 
