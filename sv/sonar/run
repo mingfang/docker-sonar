@@ -1,4 +1,6 @@
 #!/bin/sh
 
+chown -R sonar /sonar
+
 exec 2>&1
 exec chpst -u sonar /sonar/bin/linux-x86-64/sonar.sh console
